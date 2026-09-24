@@ -1,0 +1,16 @@
+pluginManagement {
+    // Chaquo's Gradle plugin (used since Phase 4 for the bundled Python runtime) is not on the
+    // Gradle Plugin Portal — it is only published to Chaquo's own Maven repo. Without this line
+    // plugin resolution for `id 'com.chaquo.python'` fails and the build never reaches
+    // configuration, which is the bug fixed here (see the build failure at :app:generateSourcesDebug
+    // — Chaquopy hooks its Python-extraction task into that source-generation step, so a
+    // resolution failure upstream surfaces there even though the plain AGP/resource tasks above
+    // it in the log succeed).
+    repositories { gradlePluginPortal(); google(); mavenCentral(); maven { url 'https://chaquo.com/maven' } }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories { google(); mavenCentral(); maven { url 'https://chaquo.com/maven' } }
+}
+rootProject.name = 'CodeArc'
+include ':app'

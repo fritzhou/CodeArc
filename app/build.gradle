@@ -1,0 +1,57 @@
+plugins { id 'com.android.application'; id 'org.jetbrains.kotlin.android'; id 'com.google.devtools.ksp'; id 'com.chaquo.python' }
+android {
+ namespace 'com.codearc.app'
+ compileSdk 34
+ defaultConfig {
+  applicationId 'com.codearc.app'; minSdk 24; targetSdk 34; versionCode 7; versionName '0.7.0'
+  ndk { abiFilters.addAll(["arm64-v8a", "armeabi-v7a", "x86_64"]) }
+  python { pip { /* no third-party packages yet — Phase 4 ships the bare interpreter only */ } }
+ }
+ compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+ kotlinOptions { jvmTarget = '17' }
+ buildFeatures { viewBinding true }
+}
+dependencies {
+ testImplementation 'junit:junit:4.13.2'
+ implementation 'androidx.core:core-ktx:1.13.1'
+ implementation 'androidx.appcompat:appcompat:1.7.0'
+ implementation 'androidx.activity:activity-ktx:1.9.1'
+ implementation 'androidx.fragment:fragment-ktx:1.8.2'
+ implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.4'
+ implementation 'androidx.core:core-splashscreen:1.0.1'
+ implementation 'androidx.drawerlayout:drawerlayout:1.2.0'
+ implementation 'com.google.android.material:material:1.12.0'
+ // buildFeatures.viewBinding normally makes AGP inject androidx.databinding:viewbinding onto
+ // the compile classpath itself; CodeAssist doesn't run that injection either (same class of
+ // gap as the Chaquo fix above), so the generated *Binding.java classes' own
+ // "implements androidx.viewbinding.ViewBinding" couldn't resolve. Declared explicitly, pinned
+ // to the same version as the Android Gradle Plugin above.
+ implementation 'androidx.databinding:viewbinding:8.5.2'
+ implementation 'androidx.datastore:datastore-preferences:1.1.1'
+ // CodeAssist's on-device build engine (see PHASE6.md) does not execute the Chaquo Gradle
+ // plugin's own dependency-injection logic, so the Java API classes PythonRuntime.kt imports
+ // (com.chaquo.python.Python, PyException, AndroidPlatform) are declared explicitly here rather
+ // than relying on the plugin to add them automatically. On a real Gradle+AGP build the plugin
+ // adds the same artifact itself; declaring it too just resolves to the same jar, so this is
+ // safe either way.
+ implementation('com.chaquo.python.runtime:chaquopy_java:15.0.1') { exclude group: 'org.jetbrains', module: 'annotations-java5' }
+ implementation 'androidx.room:room-runtime:2.8.4'
+ implementation 'androidx.room:room-ktx:2.8.4'
+ ksp 'androidx.room:room-compiler:2.8.4'
+ // Phase 7: real (not simulated) local Git — Initialize/Commit/View Changes and HTTPS clone,
+ // using JGit's pure-Java implementation so no native git binary is needed on-device. Core-only
+ // artifact: no SSH/GPG extras, since those aren't used and would only add more transitive
+ // dependencies to CodeAssist's resolver.
+ implementation 'org.eclipse.jgit:org.eclipse.jgit:6.10.0.202406032230-r'
+}
+// NOTE on the "Duplicate class org.intellij.lang.annotations.Identifier" build error:
+// CodeAssist (Tyron's on-device IDE) does not run a real Gradle dependency resolver against
+// this file — it only reads the 'group:artifact:version' coordinates out of each
+// implementation line and resolves the actual dependency tree itself into module.toml. Groovy
+// exclude closures and configurations.all blocks are silently ignored, which is why two
+// earlier attempts at fixing this duplicate-class error from inside this file did nothing.
+// The real fix has to be applied in-app: Editor screen -> More (...) -> Dependency Manager,
+// where CodeAssist exposes its own exclude mechanism against the dependency tree it actually
+// resolves. Diagnosis in progress as of this Phase 7 source drop — one confirmed copy of
+// org.intellij.lang.annotations.Identifier comes from org.jetbrains:annotations:24.1.0; the
+// second colliding jar has not yet been identified from inside the Dependency Manager tree.
