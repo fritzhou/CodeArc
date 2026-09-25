@@ -8,6 +8,6 @@
         app:navigationIconTint="@color/text" android:background="@color/secondary"
         app:title="Storage"/>
     <androidx.core.widget.NestedScrollView android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true">
-        <LinearLayout android:id="@+id/page" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="20dp" android:orientation="vertical"/>
+        <LinearLayout android:id="@+id/page" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="16dp" android:orientation="vertical"/>
     </androidx.core.widget.NestedScrollView>
 </LinearLayout>

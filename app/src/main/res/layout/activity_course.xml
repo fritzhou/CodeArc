@@ -6,9 +6,11 @@
         android:layout_width="match_parent" android:layout_height="?attr/actionBarSize"
         app:titleTextColor="@color/text" app:navigationIcon="?attr/homeAsUpIndicator"
         app:navigationIconTint="@color/text" android:background="@color/secondary"/>
-    <LinearLayout android:id="@+id/tabRow" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="horizontal" android:background="@color/secondary"/>
+    <com.google.android.material.tabs.TabLayout android:id="@+id/tabRow" android:layout_width="match_parent" android:layout_height="wrap_content"
+        app:tabMode="scrollable" app:tabGravity="start" app:tabBackground="@color/secondary"
+        app:tabIndicatorColor="@color/primary" app:tabTextColor="@color/muted" app:tabSelectedTextColor="@color/text"
+        app:tabPaddingStart="14dp" app:tabPaddingEnd="14dp" app:tabMinWidth="0dp"/>
     <androidx.core.widget.NestedScrollView android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true">
-        <LinearLayout android:id="@+id/page" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="20dp" android:orientation="vertical"/>
+        <LinearLayout android:id="@+id/page" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="16dp" android:orientation="vertical"/>
     </androidx.core.widget.NestedScrollView>
 </LinearLayout>

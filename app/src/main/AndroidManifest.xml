@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
  <uses-permission android:name="android.permission.INTERNET"/>
- <application android:allowBackup="false" android:label="CodeArc" android:icon="@drawable/ic_logo" android:theme="@style/Theme.CodeArc" android:supportsRtl="true">
+ <application android:name=".CodeArcApplication" android:allowBackup="false" android:label="CodeArc" android:icon="@drawable/ic_logo" android:theme="@style/Theme.CodeArc" android:supportsRtl="true">
  <activity android:name=".ui.EditorActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
  <activity android:name=".ui.LanguagesActivity" android:exported="false"/>
  <activity android:name=".ui.CourseActivity" android:exported="false"/>

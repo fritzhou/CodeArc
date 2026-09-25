@@ -30,7 +30,7 @@ class PageFragment : Fragment(R.layout.fragment_page) {
  text = value; textSize = size; setTextColor(color(accent)); if(bold) setTypeface(typeface, Typeface.BOLD)
  setPadding(0, dp(5), 0, dp(5)); setLineSpacing(dp(3).toFloat(), 1f)
  }
- private fun section(title: String) { page.addView(text(title, 18f, R.color.text, true).apply { setPadding(0,dp(20),0,dp(12)) }) }
+ private fun section(title: String) { page.addView(text(title, 17f, R.color.text, true).apply { setPadding(0,dp(14),0,dp(8)) }) }
  private fun card(title: String, description: String, accent: Int = R.color.cyan, click: (() -> Unit)? = null): MaterialCardView {
  val card = layoutInflater.inflate(R.layout.item_card, page, false) as MaterialCardView
  card.findViewById<LinearLayout>(R.id.card_content).apply {
@@ -44,6 +44,9 @@ class PageFragment : Fragment(R.layout.fragment_page) {
  private fun go(name: String) { (requireActivity() as MainActivity).select(name) }
  private fun button(label: String, action: () -> Unit) = MaterialButton(requireContext()).apply { text = label; setOnClickListener { action() } }
  private fun openCourse(languageId: String) { startActivity(Intent(requireContext(), CourseActivity::class.java).putExtra("language", languageId)) }
+ /** Quick Code reuses the real project + editor architecture instead of a second editor —
+  *  see UiKit.openQuickCode(). */
+ private fun openQuickCode() { viewLifecycleOwner.lifecycleScope.launch { openQuickCode(requireContext()) } }
  override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
  page = view.findViewById(R.id.page)
  when(arguments?.getString("page") ?: "Home") { "Home" -> home(); "Projects" -> projects(); "Learn" -> learn(); else -> settings() }
@@ -60,8 +63,8 @@ class PageFragment : Fragment(R.layout.fragment_page) {
  hero.findViewById<LinearLayout>(R.id.card_content).apply { addView(text("</>  endless possibilities",18f,R.color.cyan).apply { typeface=Typeface.MONOSPACE }); addView(button("＋  New Project") { startActivity(Intent(requireContext(),ProjectActivity::class.java)) }) }
  val actions = listOf("Quick Code", "Learn", "Open Project", "Templates")
  actions.chunked(2).forEach { row ->
- val layout = LinearLayout(requireContext())
- row.forEach { label -> layout.addView(button(label) { when(label) { "Learn" -> go("Learn"); "Open Project" -> go("Projects"); "Templates" -> startActivity(Intent(requireContext(),ProjectActivity::class.java)); else -> info("Quick Code", "The code editor arrives in Phase 3.") } }, LinearLayout.LayoutParams(0,dp(60),1f).apply { setMargins(dp(3),0,dp(3),0) }) }; page.addView(layout)
+ val layout = LinearLayout(requireContext()).apply { setPadding(0,dp(4),0,dp(4)) }
+ row.forEach { label -> layout.addView(button(label) { when(label) { "Learn" -> go("Learn"); "Open Project" -> go("Projects"); "Templates" -> startActivity(Intent(requireContext(),ProjectActivity::class.java)); else -> openQuickCode() } }, LinearLayout.LayoutParams(0,dp(52),1f).apply { setMargins(dp(3),0,dp(3),0) }) }; page.addView(layout)
  }
  section("Continue Learning")
  val continueLearning = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }; page.addView(continueLearning)
@@ -98,13 +101,13 @@ class PageFragment : Fragment(R.layout.fragment_page) {
  container.addView(card)
  }
  private fun projects() {
- page.addView(text("Projects",28f,R.color.text,true)); page.addView(text("Your ideas, organized in one place."))
+ page.addView(text("Projects",22f,R.color.text,true)); page.addView(text("Your ideas, organized in one place."))
  section("Local workspace")
- card("No projects yet.","Create your first CodeArc project. Project storage and file management arrive in Phase 2.")
+ card("No projects yet.","Create your first CodeArc project to get started.")
  page.addView(button("＋  New Project") { startActivity(Intent(requireContext(),ProjectActivity::class.java)) })
  }
  private fun learn() {
- page.addView(text("Learn",28f,R.color.text,true)); page.addView(text("One concept. One program. One step forward."))
+ page.addView(text("Learn",22f,R.color.text,true)); page.addView(text("One concept. One program. One step forward."))
  section("Continue Learning")
  val continueLearning = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL }; page.addView(continueLearning)
  viewLifecycleOwner.lifecycleScope.launch { viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) { renderContinueLearning(continueLearning) } }
@@ -115,9 +118,9 @@ class PageFragment : Fragment(R.layout.fragment_page) {
  }
  }
  private fun settings() {
- page.addView(text("Settings",28f,R.color.text,true)); page.addView(text("Make room for your workflow."))
+ page.addView(text("Settings",22f,R.color.text,true)); page.addView(text("Make room for your workflow."))
  section("Editor")
- card("Editor", "Font, indentation and wrapping · Phase 3") { info("Editor", "Font, indentation and wrapping · Phase 3") }
+ card("Editor", "Font size, tab size, word wrap, line numbers and more", R.color.cyan) { editorSettingsDialog() }
  section("Execution")
  card("Execution", "Offline runtime active (Python) · cloud execution needs a configured endpoint", R.color.cyan) { cloudSettingsDialog() }
  section("Languages"); card("Manage language packs", "Python runs offline · Package Management and 12 defined languages live here", R.color.cyan) { startActivity(Intent(requireContext(),LanguagesActivity::class.java)) }
@@ -127,9 +130,60 @@ class PageFragment : Fragment(R.layout.fragment_page) {
  card("AI", "Editor assistant (explain, fix, generate, refactor…) · needs the same cloud endpoint", R.color.cyan) { cloudSettingsDialog() }
  section("Storage")
  card("Manage storage", "Real per-category sizes for Projects, Language Packs and Cache, with a safe Clear Cache action.", R.color.cyan) { startActivity(Intent(requireContext(),StorageActivity::class.java)) }
- section("Appearance"); card("Midnight developer theme", "CodeArc's dark palette is active.")
+ section("Appearance"); card("Theme", "Light, Dark or follow System default", R.color.cyan) { themeDialog() }
  section("Account"); card("Account", "Optional. No login required.") { info("Account", "Optional. No login required.") }
  section("About"); card("CodeArc 0.7.0", "Learn. Code. Compile. Build.\nPhase 7 · Advanced Features, Optimization & Release Polish",R.color.cyan) { info("CodeArc", "Offline first. Online enhanced. Learning integrated.\n\nPython runs offline via a bundled interpreter; 11 more languages are defined and honestly marked not-yet-implemented rather than faked. Automatic mode falls back to real HTTPS cloud execution and the AI assistant once a cloud endpoint is configured. Source Control (Init/Commit/View Changes, Clone) is real, backed by JGit. Editor autocomplete offers real keyword/identifier suggestions with an architecture prepared for a future LSP. Breakpoints can be toggled in the editor gutter as prepared debugger scaffolding — stepping isn't available yet for any language.") }
+ }
+ private fun themeDialog() {
+ val ctx = requireContext()
+ val prefs = com.codearc.app.data.Preferences(ctx)
+ val options = listOf("system" to "System default", "light" to "Light", "dark" to "Dark")
+ viewLifecycleOwner.lifecycleScope.launch {
+ val current = prefs.themeMode.first()
+ val checked = options.indexOfFirst { it.first == current }.coerceAtLeast(0)
+ MaterialAlertDialogBuilder(ctx).setTitle("Theme").setSingleChoiceItems(options.map { it.second }.toTypedArray(), checked) { dialog, which ->
+ val mode = options[which].first
+ viewLifecycleOwner.lifecycleScope.launch { prefs.setThemeMode(mode) }
+ androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(when(mode) {
+ "light" -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
+ "dark" -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
+ else -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+ })
+ dialog.dismiss()
+ }.setNegativeButton("Cancel", null).show()
+ }
+ }
+ /** Same editor preferences EditorActivity's "⋮ More → Editor Settings" edits — reachable from
+  *  Settings too now, so the change applies the next time any file is opened rather than only
+  *  being changeable from inside an already-open project. */
+ private fun editorSettingsDialog() {
+ val ctx = requireContext()
+ val prefs = com.codearc.app.data.Preferences(ctx)
+ viewLifecycleOwner.lifecycleScope.launch {
+ val settings = prefs.editorSettings.first()
+ val col = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(8), dp(20), 0) }
+ val font = TextInputEditText(ctx).apply { setText(settings.fontSize.toString()) }
+ col.addView(TextInputLayout(ctx).outlined().apply { hint = "Font size (10-24)" }.apply { addView(font) })
+ col.addView(text("Tab size", 13f, R.color.muted).apply { setPadding(0, dp(10), 0, dp(4)) })
+ val tabSizeSpinner = Spinner(ctx).apply { adapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_dropdown_item, listOf("2","4","8")); setSelection(listOf(2,4,8).indexOf(settings.tabSize).coerceAtLeast(0)) }
+ col.addView(tabSizeSpinner)
+ fun switchRow(label: String, initial: Boolean): Switch {
+ val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = android.view.Gravity.CENTER_VERTICAL; setPadding(0, dp(6), 0, dp(6)) }
+ row.addView(text(label, 14f, R.color.text), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+ val sw = Switch(ctx).apply { isChecked = initial }; row.addView(sw); col.addView(row); return sw
+ }
+ val wordWrap = switchRow("Word wrap", settings.wordWrap)
+ val lineNumbers = switchRow("Line numbers", settings.lineNumbers)
+ val autoIndent = switchRow("Auto-indent", settings.autoIndent)
+ val autoBrackets = switchRow("Auto-close brackets", settings.autoBrackets)
+ val autoQuotes = switchRow("Auto-close quotes", settings.autoQuotes)
+ val syntax = switchRow("Syntax highlighting", settings.syntaxHighlighting)
+ MaterialAlertDialogBuilder(ctx).setTitle("Editor Settings").setView(col).setNegativeButton("Cancel", null).setPositiveButton("Save") { _, _ ->
+ val fontSize = font.text.toString().toIntOrNull()?.coerceIn(10, 24) ?: settings.fontSize
+ val updated = com.codearc.app.data.EditorSettings(fontSize, listOf(2,4,8)[tabSizeSpinner.selectedItemPosition], wordWrap.isChecked, lineNumbers.isChecked, autoIndent.isChecked, autoBrackets.isChecked, autoQuotes.isChecked, syntax.isChecked)
+ viewLifecycleOwner.lifecycleScope.launch { prefs.saveEditorSettings(updated) }
+ }.show()
+ }
  }
  private fun cloudSettingsDialog() {
  val ctx = requireContext()

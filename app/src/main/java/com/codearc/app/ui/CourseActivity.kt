@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
 class CourseActivity : AppCompatActivity() {
     private enum class Tab { LEARN, PRACTICE, PROJECTS, REFERENCE }
     private lateinit var page: LinearLayout
-    private lateinit var tabRow: LinearLayout
+    private lateinit var tabRow: com.google.android.material.tabs.TabLayout
     private lateinit var repo: LearningRepository
     private lateinit var course: LanguageCourse
     private var tab = Tab.LEARN
@@ -49,7 +49,14 @@ class CourseActivity : AppCompatActivity() {
         page = findViewById(R.id.page)
         tabRow = findViewById(R.id.tabRow)
         findViewById<MaterialToolbar>(R.id.toolbar).apply { title = course.displayName; setNavigationOnClickListener { finish() } }
-        renderTabRow()
+        listOf(Tab.LEARN to "Learn", Tab.PRACTICE to "Practice", Tab.PROJECTS to "Projects", Tab.REFERENCE to "Reference").forEach { (t, label) ->
+            tabRow.addTab(tabRow.newTab().setText(label).setTag(t))
+        }
+        tabRow.addOnTabSelectedListener(object : com.google.android.material.tabs.TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(t: com.google.android.material.tabs.TabLayout.Tab) { tab = t.tag as Tab; render() }
+            override fun onTabUnselected(t: com.google.android.material.tabs.TabLayout.Tab) {}
+            override fun onTabReselected(t: com.google.android.material.tabs.TabLayout.Tab) {}
+        })
         lifecycleScope.launch {
             repo.observeProgress(course.languageId).collect { list ->
                 completed = list.filter { it.completed }.map { it.lessonId }.toSet()
@@ -64,7 +71,7 @@ class CourseActivity : AppCompatActivity() {
         text = value; textSize = size; setTextColor(color(accent)); if (bold) setTypeface(typeface, Typeface.BOLD)
         setPadding(0, dp(5), 0, dp(5)); setLineSpacing(dp(3).toFloat(), 1f)
     }
-    private fun section(title: String) { page.addView(text(title, 18f, R.color.text, true).apply { setPadding(0, dp(20), 0, dp(12)) }) }
+    private fun section(title: String) { page.addView(text(title, 18f, R.color.text, true).apply { setPadding(0, dp(14), 0, dp(8)) }) }
     private fun card(title: String, description: String, accent: Int = R.color.cyan, enabled: Boolean = true, click: (() -> Unit)? = null): MaterialCardView {
         val card = layoutInflater.inflate(R.layout.item_card, page, false) as MaterialCardView
         card.findViewById<LinearLayout>(R.id.card_content).apply {
@@ -77,22 +84,10 @@ class CourseActivity : AppCompatActivity() {
     }
     private fun info(title: String, message: String) { MaterialAlertDialogBuilder(this).setTitle(title).setMessage(message).setPositiveButton("Got it", null).show() }
 
-    private fun tabButton(label: String, active: Boolean, action: () -> Unit) = MaterialButton(this, null, com.google.android.material.R.attr.borderlessButtonStyle).apply {
-        text = label; setTextColor(color(if (active) R.color.primary else R.color.muted)); setOnClickListener { action() }
-        layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-    }
-    private fun renderTabRow() {
-        tabRow.removeAllViews()
-        tabRow.addView(tabButton("Learn", tab == Tab.LEARN) { tab = Tab.LEARN; renderTabRow(); render() })
-        tabRow.addView(tabButton("Practice", tab == Tab.PRACTICE) { tab = Tab.PRACTICE; renderTabRow(); render() })
-        tabRow.addView(tabButton("Projects", tab == Tab.PROJECTS) { tab = Tab.PROJECTS; renderTabRow(); render() })
-        tabRow.addView(tabButton("Reference", tab == Tab.REFERENCE) { tab = Tab.REFERENCE; renderTabRow(); render() })
-    }
-
     private fun render() {
         page.removeAllViews()
         if (!course.available) {
-            page.addView(text(course.displayName, 28f, R.color.text, true))
+            page.addView(text(course.displayName, 22f, R.color.text, true))
             card("Offline runtime not installed", "${course.displayName} doesn't have a real offline runtime yet, so Learn content for it isn't available. See the Languages screen for what's installed.", R.color.muted) { startActivity(Intent(this, LanguagesActivity::class.java)) }
             return
         }
@@ -109,14 +104,18 @@ class CourseActivity : AppCompatActivity() {
         listOf("Beginner", "Intermediate", "Advanced").forEach { lvl ->
             row.addView(MaterialButton(this, null, com.google.android.material.R.attr.borderlessButtonStyle).apply {
                 text = lvl; setTextColor(color(if (level == lvl) R.color.primary else R.color.muted))
+                isAllCaps = false; letterSpacing = 0f; isSingleLine = true
+                insetTop = 0; insetBottom = 0; minimumWidth = 0
+                setPadding(dp(4), paddingTop, dp(4), paddingBottom)
                 setOnClickListener { level = lvl; render() }
             }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         }
-        page.addView(row)
+        val scroll = android.widget.HorizontalScrollView(this).apply { isFillViewport = true; isHorizontalScrollBarEnabled = false; addView(row) }
+        page.addView(scroll)
     }
 
     private fun renderLearn() {
-        page.addView(text(course.displayName, 28f, R.color.text, true))
+        page.addView(text(course.displayName, 22f, R.color.text, true))
         page.addView(text("Beginner → Intermediate → Advanced"))
         levelRow()
         when (level) {
@@ -140,7 +139,7 @@ class CourseActivity : AppCompatActivity() {
     }
 
     private fun renderPractice() {
-        page.addView(text("Practice", 28f, R.color.text, true))
+        page.addView(text("Practice", 22f, R.color.text, true))
         page.addView(text("Short, focused exercises — jump straight in without the lesson."))
         if (course.beginner.isEmpty()) { card("Coming soon", "No practice exercises yet for ${course.displayName}.", R.color.muted); return }
         section("Beginner")
@@ -152,7 +151,7 @@ class CourseActivity : AppCompatActivity() {
     }
 
     private fun renderProjects() {
-        page.addView(text("Guided Projects", 28f, R.color.text, true))
+        page.addView(text("Guided Projects", 22f, R.color.text, true))
         page.addView(text("Build something real using what you've learned."))
         section("Beginner")
         course.beginnerProjects.forEach { projectCard(it) }
@@ -172,7 +171,7 @@ class CourseActivity : AppCompatActivity() {
     }
 
     private fun renderReference() {
-        page.addView(text("Reference", 28f, R.color.text, true))
+        page.addView(text("Reference", 22f, R.color.text, true))
         if (course.languageId != "python") { card("Coming soon", "A quick reference for ${course.displayName} isn't written yet.", R.color.muted); return }
         section("Python quick reference")
         listOf(

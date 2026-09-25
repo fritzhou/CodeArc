@@ -35,7 +35,7 @@ class LanguagesActivity : AppCompatActivity() {
         text = value; textSize = size; setTextColor(color(accent)); if (bold) setTypeface(typeface, Typeface.BOLD)
         setPadding(0, dp(5), 0, dp(5)); setLineSpacing(dp(3).toFloat(), 1f)
     }
-    private fun section(title: String) { page.addView(text(title, 18f, R.color.text, true).apply { setPadding(0, dp(20), 0, dp(12)) }) }
+    private fun section(title: String) { page.addView(text(title, 17f, R.color.text, true).apply { setPadding(0, dp(14), 0, dp(8)) }) }
     private fun card(lang: LanguageDefinition, status: String, accent: Int): MaterialCardView {
         val card = layoutInflater.inflate(R.layout.item_card, page, false) as MaterialCardView
         card.findViewById<LinearLayout>(R.id.card_content).apply {
@@ -51,7 +51,7 @@ class LanguagesActivity : AppCompatActivity() {
 
     private fun render() {
         page.removeAllViews()
-        page.addView(text("Languages", 28f, R.color.text, true))
+        page.addView(text("Languages", 22f, R.color.text, true))
         page.addView(text("Manage offline runtimes and see what CodeArc can run right now."))
         val installed = LanguageRegistry.all.filter { RuntimeManager.isInstalled(it.id) }
         val available = LanguageRegistry.all.filter { !RuntimeManager.isInstalled(it.id) }

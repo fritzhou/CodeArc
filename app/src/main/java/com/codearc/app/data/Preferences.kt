@@ -32,6 +32,17 @@ class Preferences(private val context: Context) {
  val onboardingCompleted = context.store.data.map { it[completed] ?: false }
  suspend fun completeOnboarding() { context.store.edit { it[completed] = true } }
 
+ // "system" | "light" | "dark" — drives AppCompatDelegate.setDefaultNightMode(), which in turn
+ // decides whether the values/ (light) or values-night/ (dark) resource set is active. Applied
+ // once at process start (CodeArcApplication) and again immediately on change (Settings).
+ private val kTheme = stringPreferencesKey("theme_mode")
+ val themeMode = context.store.data.map { it[kTheme] ?: "system" }
+ suspend fun setThemeMode(mode: String) { context.store.edit { it[kTheme] = mode } }
+
+ private val kQuickCodeProjectId = stringPreferencesKey("quick_code_project_id")
+ val quickCodeProjectId = context.store.data.map { it[kQuickCodeProjectId] }
+ suspend fun setQuickCodeProjectId(id: String) { context.store.edit { it[kQuickCodeProjectId] = id } }
+
  private val kFont = intPreferencesKey("editor_font_size")
  private val kTab = intPreferencesKey("editor_tab_size")
  private val kWrap = booleanPreferencesKey("editor_word_wrap")

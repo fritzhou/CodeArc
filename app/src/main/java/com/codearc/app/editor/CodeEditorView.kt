@@ -13,6 +13,8 @@ import android.view.Gravity
 import android.view.MotionEvent
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.content.ContextCompat
+import com.codearc.app.R
 import com.codearc.app.data.EditorSettings
 
 /** Line-number gutter + CodeInput side by side. The gutter is not itself scrollable — its
@@ -38,7 +40,7 @@ class CodeEditorView @JvmOverloads constructor(context: Context, attrs: Attribut
     init {
         orientation = HORIZONTAL
         gutter.typeface = Typeface.MONOSPACE
-        gutter.setTextColor(0xFFA5B0C2.toInt())
+        gutter.setTextColor(ContextCompat.getColor(context, R.color.muted))
         gutter.gravity = Gravity.END or Gravity.TOP
         gutter.setPadding(dp(8), dp(12), dp(8), dp(120))
         gutter.setSingleLine(false)
@@ -56,7 +58,7 @@ class CodeEditorView @JvmOverloads constructor(context: Context, attrs: Attribut
         }
         addView(gutter, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT))
         input.typeface = Typeface.MONOSPACE
-        input.setTextColor(0xFFF5F7FA.toInt())
+        input.setTextColor(ContextCompat.getColor(context, R.color.text))
         input.setBackgroundColor(0)
         input.setPadding(dp(4), dp(12), dp(24), dp(120))
         input.gravity = Gravity.TOP or Gravity.START
@@ -99,7 +101,7 @@ class CodeEditorView @JvmOverloads constructor(context: Context, attrs: Attribut
         for (i in 1..lines) {
             val start = sb.length
             sb.append(if (i in breakpoints) "●" else " ").append(i.toString())
-            if (i in breakpoints) sb.setSpan(ForegroundColorSpan(0xFFFF5C69.toInt()), start, start + 1, SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE)
+            if (i in breakpoints) sb.setSpan(ForegroundColorSpan(ContextCompat.getColor(context, R.color.error)), start, start + 1, SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE)
             if (i != lines) sb.append("\n")
         }
         gutter.text = sb

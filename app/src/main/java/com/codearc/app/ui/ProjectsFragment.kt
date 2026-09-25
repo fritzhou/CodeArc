@@ -29,8 +29,10 @@ class ProjectsFragment : Fragment(R.layout.fragment_page) {
   repo=ProjectRepository(requireContext())
   query=state?.getString("query") ?: ""; language=state?.getString("language") ?: "All languages"; sort=state?.getString("sort") ?: "Recent"; favorites=state?.getBoolean("favorites") ?: false
   val page=view.findViewById<LinearLayout>(R.id.page)
-  page.addView(TextView(requireContext()).apply { text="Projects"; textSize=28f; setTextColor(resources.getColor(R.color.text,null)) })
-  page.addView(EditText(requireContext()).apply { hint="Search projects"; isSingleLine=true; setText(query); doAfterTextChanged { query=it.toString(); render() } })
+  page.addView(TextView(requireContext()).apply { text="Projects"; textSize=22f; setTextColor(resources.getColor(R.color.text,null)); setPadding(0,0,0,(8*resources.displayMetrics.density).toInt()) })
+  page.addView(com.google.android.material.textfield.TextInputLayout(requireContext()).outlined().apply { hint="Search projects"; setPadding(0,0,0,(6*resources.displayMetrics.density).toInt())
+   addView(com.google.android.material.textfield.TextInputEditText(context).apply { isSingleLine=true; setText(query); doAfterTextChanged { query=it.toString(); render() } })
+  })
   fun spinner(values: List<String>, selected: String, change: (String)->Unit) { page.addView(Spinner(requireContext()).apply {
    adapter=ArrayAdapter(requireContext(),android.R.layout.simple_spinner_dropdown_item,values); setSelection(values.indexOf(selected).coerceAtLeast(0)); onItemSelectedListener=object: AdapterView.OnItemSelectedListener { override fun onNothingSelected(parent: AdapterView<*>?) {} ; override fun onItemSelected(parent: AdapterView<*>?,v:View?,position:Int,id:Long) { change(values[position]); render() } }
   }) }

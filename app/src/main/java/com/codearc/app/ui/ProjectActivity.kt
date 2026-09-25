@@ -71,16 +71,28 @@ class ProjectActivity : AppCompatActivity() {
   }
  }
  private fun message(title: String, body: String) { if(!isFinishing && !isDestroyed) MaterialAlertDialogBuilder(this).setTitle(title).setMessage(body).setPositiveButton("OK",null).show() }
- private fun title(value: String) { page.addView(TextView(this).apply { text=value; textSize=24f; setTextColor(getColor(R.color.text)); setPadding(0,16,0,20); setTypeface(typeface,Typeface.BOLD) }) }
- private fun label(value: String) { page.addView(TextView(this).apply { text=value; textSize=14f; setPadding(0,12,0,12) }) }
- private fun button(value: String, action: () -> Unit) { page.addView(MaterialButton(this).apply { text=value; setOnClickListener { action() } }) }
+ private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
+ private fun title(value: String) { page.addView(TextView(this).apply { text=value; textSize=22f; setTextColor(getColor(R.color.text)); setPadding(0,dp(4),0,dp(14)); setTypeface(typeface,Typeface.BOLD) }) }
+ private fun label(value: String) { page.addView(TextView(this).apply { text=value; textSize=13f; setTextColor(getColor(R.color.muted)); setPadding(0,dp(6),0,dp(10)); setLineSpacing(dp(3).toFloat(),1f) }) }
+ private fun button(value: String, action: () -> Unit) { page.addView(MaterialButton(this).apply { text=value; setOnClickListener { action() } }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0,0,0,dp(8)) }) }
+ /** Builds a labeled outlined text field. The value is set only after the field is fully
+  *  attached to [box] and [box] to [page], which — together with forcing the outlined box style
+  *  via [outlined] — is what keeps the hint from overlapping the value (see UiKit.kt). */
  private fun field(hint: String, value: String=""): TextInputEditText {
-  val box=TextInputLayout(this).apply { this.hint=hint }
-  val input=TextInputEditText(this).apply { setText(value); isSingleLine=true }; box.addView(input); page.addView(box); return input
+  val box=TextInputLayout(this).outlined().apply { this.hint=hint; setPadding(0,dp(4),0,dp(2)) }
+  val input=TextInputEditText(box.context).apply { isSingleLine=true }
+  box.addView(input)
+  page.addView(box, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0,0,0,dp(10)) })
+  input.setText(value)
+  return input
  }
  private fun spinner(caption: String, values: List<String>): Spinner {
-  label(caption)
-  return Spinner(this).also { it.adapter=ArrayAdapter(this,android.R.layout.simple_spinner_dropdown_item,values); page.addView(it) }
+  page.addView(TextView(this).apply { text=caption; textSize=13f; setTextColor(getColor(R.color.muted)); setPadding(0,dp(6),0,dp(4)) })
+  return Spinner(this).also {
+   it.adapter=ArrayAdapter(this,android.R.layout.simple_spinner_dropdown_item,values)
+   it.setPadding(dp(4),dp(10),dp(4),dp(10))
+   page.addView(it, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0,0,0,dp(10)) })
+  }
  }
  private lateinit var nameInput: TextInputEditText
  private lateinit var languageSpinner: Spinner
