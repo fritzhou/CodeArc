@@ -34,7 +34,6 @@ dependencies {
  // than relying on the plugin to add them automatically. On a real Gradle+AGP build the plugin
  // adds the same artifact itself; declaring it too just resolves to the same jar, so this is
  // safe either way.
- implementation 'com.chaquo.python.runtime:chaquopy_java:15.0.1'
  implementation 'androidx.room:room-runtime:2.8.4'
  implementation 'androidx.room:room-ktx:2.8.4'
  ksp 'androidx.room:room-compiler:2.8.4'
