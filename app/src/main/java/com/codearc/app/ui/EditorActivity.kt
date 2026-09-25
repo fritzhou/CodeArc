@@ -5,6 +5,13 @@ import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
 import android.view.View
+import android.webkit.ConsoleMessage
+import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -34,6 +41,7 @@ import com.codearc.app.execution.ExecutionManager
 import com.codearc.app.execution.ExecutionResult
 import com.codearc.app.execution.ExecutionStatus
 import com.codearc.app.execution.LanguageRegistry
+import com.codearc.app.projects.Project
 import com.codearc.app.projects.ProjectRepository
 import com.codearc.app.projects.SafeFiles
 import com.codearc.app.projects.Templates
@@ -91,6 +99,13 @@ class EditorActivity : AppCompatActivity() {
     private var running = false
     private var outputText: String = "Nothing has run yet.\nTap ▶ Run to execute this project's main file."
     private var lastResult: ExecutionResult? = null
+    // Web (HTML) project preview — a real, visible WebView stacked in editorContainer next to
+    // the file tabs, shown only while previewing (see runWebProject/showPreview). Everything
+    // else in this class is completely unaffected by/unaware of this: Python and every other
+    // language still runs through execution.run() exactly as before.
+    private var previewView: WebView? = null
+    private val consoleLog = StringBuilder()
+    private val consoleErr = StringBuilder()
 
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
@@ -133,6 +148,7 @@ class EditorActivity : AppCompatActivity() {
     }
     override fun onSaveInstanceState(outState: Bundle) { outState.putString("project", projectId); current?.let { outState.putString("file", it.relative) }; super.onSaveInstanceState(outState) }
     override fun onPause() { super.onPause(); tabs.forEach { t -> if (t.dirty) lifecycleScope.launch { runCatching { repo.write(projectId, t.relative, t.view.content()) } } } }
+    override fun onDestroy() { previewView?.destroy(); super.onDestroy() }
 
     private fun task(block: suspend () -> Unit) {
         if (working) return
@@ -329,29 +345,100 @@ class EditorActivity : AppCompatActivity() {
             try {
                 tabs.forEach { t -> if (t.dirty) { repo.write(projectId, t.relative, t.view.content()); t.dirty = false; updateTabTitle(t) } }
                 val project = repo.get(projectId)
-                panelMode = Panel.OUTPUT
-                if (!panelExpanded) expandPanel() else setupPanelTabs()
-                val stdin = askForStdin(project.name)
-                outputText = "Running ${project.mainFile}..."
-                lastResult = null
-                renderPanel()
-                // Let ExecutionManager make the offline/cloud decision — it already knows
-                // whether Python's offline runtime is installed and whether a cloud endpoint
-                // is configured; short-circuiting here on RuntimeManager alone (as earlier
-                // phases did) would have skipped cloud execution entirely for every
-                // non-Python project, even with a cloud endpoint configured in Settings.
-                val result = execution.run(project, repo.root(project), stdin)
-                outputText = when (result.status) {
-                    ExecutionStatus.REQUIRES_INTERNET -> "Requires internet."
-                    ExecutionStatus.CLOUD_NOT_CONFIGURED -> "Cloud execution isn't configured yet. Add a cloud endpoint in Settings > Execution, or run offline with Python."
-                    ExecutionStatus.RUNTIME_NOT_INSTALLED -> "Runtime not installed.\n\nOnly Python runs offline in this build, and there's no internet connection (or no cloud endpoint configured) to fall back to. See Languages for what's honestly supported."
-                    ExecutionStatus.TIMEOUT -> "Execution timed out."
-                    else -> "Running ${project.mainFile}..."
+                if (project.language == "HTML") {
+                    runWebProject(project)
+                } else {
+                    panelMode = Panel.OUTPUT
+                    if (!panelExpanded) expandPanel() else setupPanelTabs()
+                    val stdin = askForStdin(project.name)
+                    outputText = "Running ${project.mainFile}..."
+                    lastResult = null
+                    renderPanel()
+                    // Let ExecutionManager make the offline/cloud decision — it already knows
+                    // whether Python's offline runtime is installed and whether a cloud endpoint
+                    // is configured; short-circuiting here on RuntimeManager alone (as earlier
+                    // phases did) would have skipped cloud execution entirely for every
+                    // non-Python project, even with a cloud endpoint configured in Settings.
+                    val result = execution.run(project, repo.root(project), stdin)
+                    outputText = when (result.status) {
+                        ExecutionStatus.REQUIRES_INTERNET -> "Requires internet."
+                        ExecutionStatus.CLOUD_NOT_CONFIGURED -> "Cloud execution isn't configured yet. Add a cloud endpoint in Settings > Execution, or run offline with Python."
+                        ExecutionStatus.RUNTIME_NOT_INSTALLED -> "Runtime not installed.\n\nOnly Python runs offline in this build, and there's no internet connection (or no cloud endpoint configured) to fall back to. See Languages for what's honestly supported."
+                        ExecutionStatus.TIMEOUT -> "Execution timed out."
+                        else -> "Running ${project.mainFile}..."
+                    }
+                    lastResult = result
+                    renderPanel()
                 }
-                lastResult = result
-                renderPanel()
             } finally { running = false }
         }
+    }
+
+    // ---- Web (HTML) project Run/Preview. A real Android WebView renders the project's actual
+    // files straight off disk (file://...), so <link>/<script> tags to sibling style.css/
+    // script.js resolve exactly like a normal static site — no wrapping or injection needed.
+    // Console output (console.log/warn/error, and uncaught JS exceptions, which Chromium also
+    // reports through the console) is captured live and fed into the SAME Output panel Python's
+    // Run already uses, via the same outputText/lastResult fields and renderPanel(). Tapping Run
+    // again just reloads the same WebView from the current files on disk — editing and rerunning
+    // never recreates the project.
+    private fun runWebProject(project: Project) {
+        panelMode = Panel.OUTPUT
+        if (!panelExpanded) expandPanel() else setupPanelTabs()
+        consoleLog.clear(); consoleErr.clear()
+        outputText = "Loading ${project.mainFile}..."
+        lastResult = null
+        renderPanel()
+        showPreview(project)
+    }
+    private fun showPreview(project: Project) {
+        val webView = previewView ?: WebView(this).also { wv ->
+            wv.settings.javaScriptEnabled = true
+            wv.settings.domStorageEnabled = true
+            wv.settings.cacheMode = WebSettings.LOAD_NO_CACHE
+            wv.webChromeClient = object : WebChromeClient() {
+                override fun onConsoleMessage(message: ConsoleMessage): Boolean { appendConsoleMessage(message); return true }
+            }
+            wv.webViewClient = object : WebViewClient() {
+                override fun onPageFinished(view: WebView?, url: String?) { refreshWebOutput() }
+                override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
+                    if (request?.isForMainFrame == true) { consoleErr.appendLine("Failed to load ${request.url}: ${error?.description}"); refreshWebOutput() }
+                }
+            }
+            editorContainer.addView(wv, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+            previewView = wv
+        }
+        tabs.forEach { it.view.visibility = View.GONE }
+        webView.visibility = View.VISIBLE
+        webView.bringToFront()
+        val file = File(repo.root(project), project.mainFile)
+        if (!file.isFile) {
+            outputText = "Main file not found: ${project.mainFile}"
+            lastResult = ExecutionResult("", "Main file not found: ${project.mainFile}", -1, 0, ExecutionStatus.RUNTIME_ERROR)
+            renderPanel()
+            return
+        }
+        webView.loadUrl("file://" + file.absolutePath)
+    }
+    private fun appendConsoleMessage(message: ConsoleMessage) {
+        val where = message.sourceId()?.let { File(it).name }?.takeIf { it.isNotBlank() }?.let { "$it:${message.lineNumber()}" } ?: "console"
+        when (message.messageLevel()) {
+            ConsoleMessage.MessageLevel.ERROR -> consoleErr.appendLine("[$where] ${message.message()}")
+            ConsoleMessage.MessageLevel.WARNING -> consoleLog.appendLine("[$where] Warning: ${message.message()}")
+            else -> consoleLog.appendLine("[$where] ${message.message()}")
+        }
+        refreshWebOutput()
+    }
+    private fun refreshWebOutput() {
+        outputText = "Previewing this project. Console output (if any) is below."
+        lastResult = ExecutionResult(
+            stdout = consoleLog.toString().trimEnd(),
+            stderr = consoleErr.toString().trimEnd(),
+            exitCode = if (consoleErr.isEmpty()) 0 else 1,
+            executionTimeMs = 0,
+            status = if (consoleErr.isEmpty()) ExecutionStatus.SUCCESS else ExecutionStatus.RUNTIME_ERROR
+        )
+        if (panelMode == Panel.OUTPUT) renderPanel()
     }
     private suspend fun askForStdin(projectName: String): String = suspendCancellableCoroutine { cont ->
         if (isFinishing || isDestroyed) { if (cont.isActive) cont.resume(""); return@suspendCancellableCoroutine }
@@ -401,6 +488,7 @@ class EditorActivity : AppCompatActivity() {
     }
     private fun selectTab(relative: String) {
         tabs.forEach { it.view.visibility = if (it.relative == relative) View.VISIBLE else View.GONE }
+        previewView?.visibility = View.GONE
         current = tabs.find { it.relative == relative }
         current?.view?.applySettings(settings)
         autocompleteScroll.visibility = View.GONE

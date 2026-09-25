@@ -19,7 +19,9 @@ data class LanguageDefinition(
 object LanguageRegistry {
     val all = listOf(
         LanguageDefinition("python", "Python", listOf("py"), "python", "CPython 3.8 (bundled, offline)", offlineCapable = true, onlineCapable = true, packageSupport = false, storageSizeMb = 28),
-        LanguageDefinition("javascript", "JavaScript", listOf("js"), "javascript", "Not yet implemented", offlineCapable = false, onlineCapable = true, packageSupport = false, storageSizeMb = 0),
+        LanguageDefinition("html", "HTML", listOf("html", "htm"), "html", "Rendered offline via Android's built-in WebView", offlineCapable = true, onlineCapable = false, packageSupport = false, storageSizeMb = 0),
+        LanguageDefinition("css", "CSS", listOf("css"), "css", "Styles HTML pages, applied offline via WebView — not run on its own", offlineCapable = true, onlineCapable = false, packageSupport = false, storageSizeMb = 0),
+        LanguageDefinition("javascript", "JavaScript", listOf("js"), "javascript", "Runs offline inside HTML/web projects via the WebView JS engine; a standalone JavaScript project still needs cloud execution for Node-style APIs", offlineCapable = false, onlineCapable = true, packageSupport = false, storageSizeMb = 0),
         LanguageDefinition("c", "C", listOf("c"), "c", "Not yet implemented", offlineCapable = false, onlineCapable = true, packageSupport = false, storageSizeMb = 0),
         LanguageDefinition("cpp", "C++", listOf("cpp", "cc", "cxx"), "cpp", "Not yet implemented", offlineCapable = false, onlineCapable = true, packageSupport = false, storageSizeMb = 0),
         LanguageDefinition("java", "Java", listOf("java"), "java", "Not yet implemented", offlineCapable = false, onlineCapable = true, packageSupport = false, storageSizeMb = 0),

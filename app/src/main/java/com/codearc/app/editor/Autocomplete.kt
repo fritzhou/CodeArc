@@ -20,7 +20,9 @@ object KeywordCompletionProvider : CompletionProvider {
         "kotlin" to listOf("fun", "val", "var", "return", "if", "else", "for", "while", "class", "object", "interface", "import", "package", "when", "is", "in", "try", "catch", "finally", "null", "true", "false", "println", "readln"),
         "c" to listOf("int", "char", "float", "double", "void", "return", "if", "else", "for", "while", "struct", "typedef", "include", "define", "printf", "scanf", "main", "const", "static"),
         "cpp" to listOf("int", "char", "float", "double", "void", "return", "if", "else", "for", "while", "class", "struct", "public", "private", "namespace", "using", "std", "cout", "cin", "endl", "include", "const", "new", "delete"),
-        "lua" to listOf("function", "return", "if", "then", "else", "elseif", "end", "for", "while", "do", "local", "print", "require", "nil", "true", "false", "io", "table")
+        "lua" to listOf("function", "return", "if", "then", "else", "elseif", "end", "for", "while", "do", "local", "print", "require", "nil", "true", "false", "io", "table"),
+        "html" to listOf("div", "span", "class", "id", "href", "src", "html", "head", "body", "title", "meta", "link", "script", "style", "button", "input", "form", "img", "ul", "li", "table", "header", "footer", "section", "article"),
+        "css" to listOf("color", "background", "display", "flex", "grid", "margin", "padding", "border", "width", "height", "font-size", "font-family", "position", "absolute", "relative", "hover", "important", "center", "solid", "border-radius")
     )
     override fun complete(prefix: String, fileText: String, language: String): List<String> {
         val lower = prefix.lowercase()

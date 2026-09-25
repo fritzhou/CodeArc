@@ -56,6 +56,15 @@ class ExecutionManager(context: Context) {
      *  one-file project. Always local/offline: lesson content only exists for languages with a
      *  real runtime (see LearnContent.kt), so there's no cloud/automatic decision to make here. */
     suspend fun runSnippet(languageId: String, code: String, stdin: String = ""): ExecutionResult = withContext(Dispatchers.IO) {
+        // HTML/CSS/JavaScript never go through RuntimeManager/LocalExecutionEngine at all — a
+        // real WebView is a fundamentally different execution model (render + capture console
+        // output) from the process-style stdout/stderr engines below, and bypassing the gate
+        // here means RuntimeManager's "javascript" flag can stay false (preserving the existing
+        // standalone Node-style JavaScript project's cloud fallback) while these three still
+        // genuinely work offline for Learn.
+        if (languageId == "html" || languageId == "css" || languageId == "javascript") {
+            return@withContext WebRuntime.runSnippet(appContext, languageId, code)
+        }
         val lang = LanguageRegistry.forId(languageId) ?: return@withContext ExecutionResult.notInstalled()
         if (!RuntimeManager.isInstalled(languageId)) return@withContext ExecutionResult.notInstalled()
         val scratch = File(appContext.cacheDir, "learn_scratch/$languageId").apply { deleteRecursively(); mkdirs() }

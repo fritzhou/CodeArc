@@ -126,8 +126,8 @@ class ProjectActivity : AppCompatActivity() {
   *  recognizable entry point. Good enough for typical small repos; anything deeper can have its
   *  main file set afterward via Project configuration, which already exists below. */
  private fun guessMainFile(root: File): File? {
-  val canonicalNames = setOf("main.py","Main.java","main.kt","main.js","index.js","main.c","main.cpp","main.lua")
-  val sourceExtensions = setOf("py","js","c","cpp","cc","cxx","java","kt","lua")
+  val canonicalNames = setOf("index.html","main.py","Main.java","main.kt","main.js","index.js","main.c","main.cpp","main.lua")
+  val sourceExtensions = setOf("py","html","htm","js","c","cpp","cc","cxx","java","kt","lua")
   var scanned = 0
   fun scan(dir: File, depth: Int, matches: (File) -> Boolean): File? {
    if (scanned > 400) return null

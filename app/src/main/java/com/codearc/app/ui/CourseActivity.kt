@@ -172,20 +172,13 @@ class CourseActivity : AppCompatActivity() {
 
     private fun renderReference() {
         page.addView(text("Reference", 22f, R.color.text, true))
-        if (course.languageId != "python") { card("Coming soon", "A quick reference for ${course.displayName} isn't written yet.", R.color.muted); return }
-        section("Python quick reference")
-        listOf(
-            "Print" to "print(value1, value2, ...)",
-            "Input" to "input(\"prompt\")  → always returns a string",
-            "Types" to "int, float, str, bool, list, tuple, dict",
-            "Condition" to "if x:\\n    ...\\nelif y:\\n    ...\\nelse:\\n    ...",
-            "For loop" to "for i in range(n):\\n    ...",
-            "While loop" to "while condition:\\n    ...",
-            "Function" to "def name(params):\\n    return value",
-            "List" to "items = [1, 2, 3]; items.append(4)",
-            "Dict" to "d = {\"key\": \"value\"}; d[\"key\"]",
-            "File" to "with open(path, \"r\") as f:\\n    f.read()"
-        ).forEach { (title, snippet) -> card(title, snippet.replace("\\n", "\n"), R.color.text) }
+        when (course.languageId) {
+            "python" -> { section("Python quick reference"); PYTHON_REFERENCE.forEach { (title, snippet) -> card(title, snippet.replace("\\n", "\n"), R.color.text) } }
+            "html" -> { section("HTML quick reference"); HTML_REFERENCE.forEach { (title, snippet) -> card(title, snippet.replace("\\n", "\n"), R.color.text) } }
+            "css" -> { section("CSS quick reference"); CSS_REFERENCE.forEach { (title, snippet) -> card(title, snippet.replace("\\n", "\n"), R.color.text) } }
+            "javascript" -> { section("JavaScript quick reference"); JS_REFERENCE.forEach { (title, snippet) -> card(title, snippet.replace("\\n", "\n"), R.color.text) } }
+            else -> card("Coming soon", "A quick reference for ${course.displayName} isn't written yet.", R.color.muted)
+        }
     }
 
     private fun openLesson(lessonId: String) {
@@ -195,3 +188,54 @@ class CourseActivity : AppCompatActivity() {
             .putExtra("lessonId", lessonId).putStringArrayListExtra("lessonIds", ids))
     }
 }
+
+private val PYTHON_REFERENCE = listOf(
+    "Print" to "print(value1, value2, ...)",
+    "Input" to "input(\"prompt\")  → always returns a string",
+    "Types" to "int, float, str, bool, list, tuple, dict",
+    "Condition" to "if x:\\n    ...\\nelif y:\\n    ...\\nelse:\\n    ...",
+    "For loop" to "for i in range(n):\\n    ...",
+    "While loop" to "while condition:\\n    ...",
+    "Function" to "def name(params):\\n    return value",
+    "List" to "items = [1, 2, 3]; items.append(4)",
+    "Dict" to "d = {\"key\": \"value\"}; d[\"key\"]",
+    "File" to "with open(path, \"r\") as f:\\n    f.read()"
+)
+private val HTML_REFERENCE = listOf(
+    "Heading" to "<h1>...</h1>  through <h6>",
+    "Paragraph" to "<p>text</p>",
+    "Link" to "<a href=\"url\">text</a>",
+    "Image" to "<img src=\"path\" alt=\"description\">",
+    "List" to "<ul>\\n  <li>item</li>\\n</ul>",
+    "Div / span" to "<div>block</div>  <span>inline</span>",
+    "Form input" to "<input id=\"x\" type=\"text\">",
+    "Button" to "<button id=\"x\">label</button>",
+    "Comment" to "<!-- comment -->",
+    "Link a stylesheet" to "<link rel=\"stylesheet\" href=\"style.css\">",
+    "Link a script" to "<script src=\"script.js\"></script>"
+)
+private val CSS_REFERENCE = listOf(
+    "Select by class" to ".card { ... }",
+    "Select by id" to "#header { ... }",
+    "Select by tag" to "p { ... }",
+    "Text color" to "color: #147bff;",
+    "Background" to "background-color: white;",
+    "Box model" to "margin: 8px; border: 1px solid #ccc; padding: 8px;",
+    "Font" to "font-family: sans-serif; font-size: 16px;",
+    "Flexbox" to "display: flex;\\njustify-content: center;\\nalign-items: center;",
+    "Border radius" to "border-radius: 8px;",
+    "Comment" to "/* comment */"
+)
+private val JS_REFERENCE = listOf(
+    "Log" to "console.log(value1, value2, ...)",
+    "Variable" to "let x = 1;  const y = 2;",
+    "String" to "`Hello, ${'$'}{name}`  (template literal)",
+    "Condition" to "if (x) {\\n  ...\\n} else if (y) {\\n  ...\\n} else {\\n  ...\\n}",
+    "For loop" to "for (let i = 0; i < n; i++) { ... }",
+    "While loop" to "while (condition) { ... }",
+    "Function" to "function name(params) {\\n  return value;\\n}",
+    "Arrow function" to "const name = (params) => value;",
+    "Array" to "const items = [1, 2, 3]; items.push(4);",
+    "Get element" to "document.getElementById(\"id\")",
+    "Event listener" to "el.addEventListener(\"click\", () => { ... });"
+)

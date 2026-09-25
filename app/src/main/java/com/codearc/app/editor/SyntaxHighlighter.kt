@@ -18,7 +18,8 @@ object SyntaxHighlighter {
         "Kotlin" to setOf("fun","val","var","return","if","else","for","while","when","class","interface","object","package","import","is","in","as","null","true","false","try","catch","finally","throw","break","continue","this","super","override","private","protected","public","internal","companion","data","sealed","enum","suspend","inline","lateinit","init","by","typealias"),
         "C" to setOf("int","char","float","double","void","long","short","unsigned","signed","struct","union","enum","typedef","if","else","for","while","do","switch","case","default","break","continue","return","sizeof","static","const","extern","volatile","goto","include","define"),
         "C++" to setOf("int","char","float","double","void","long","short","unsigned","signed","struct","union","enum","typedef","class","public","private","protected","virtual","new","delete","namespace","using","template","typename","if","else","for","while","do","switch","case","default","break","continue","return","sizeof","static","const","extern","volatile","try","catch","throw","this","nullptr","true","false","include","auto"),
-        "Lua" to setOf("function","end","if","then","else","elseif","for","while","do","repeat","until","local","return","break","in","and","or","not","nil","true","false","goto")
+        "Lua" to setOf("function","end","if","then","else","elseif","for","while","do","repeat","until","local","return","break","in","and","or","not","nil","true","false","goto"),
+        "CSS" to setOf("important","inherit","initial","unset","auto","none","block","inline","inline-block","flex","grid","absolute","relative","fixed","sticky","static","bold","italic","underline","center","left","right","solid","dashed","dotted","hidden","visible","transparent","hover","active","focus","before","after","root","media","import","keyframes","from","to")
     )
     private val NUMBER = Regex("\\b\\d+(\\.\\d+)?\\b")
     private val IDENT = Regex("\\b[A-Za-z_][A-Za-z0-9_]*\\b")
@@ -44,6 +45,17 @@ object SyntaxHighlighter {
             editable.setSpan(HL(color), range.first, range.last + 1, Editable.SPAN_EXCLUSIVE_EXCLUSIVE)
             if (bold) editable.setSpan(StyleSpan(Typeface.BOLD), range.first, range.last + 1, Editable.SPAN_EXCLUSIVE_EXCLUSIVE)
             for (i in range) masked[i] = true
+        }
+        // HTML has no "keywords" in the usual sense — it's tags and attributes, not a
+        // comment/string/keyword/number pipeline — so it gets its own small routine rather than
+        // being forced through the generic one below (which every other language still uses
+        // unchanged).
+        if (language == "HTML") {
+            Regex("<!--.*?-->", RegexOption.DOT_MATCHES_ALL).findAll(text).forEach { m -> if (m.range.none { masked[it] }) mark(m.range, 0xFF6B7A99.toInt()) }
+            stringRegex(language).findAll(text).forEach { m -> if (m.range.none { masked[it] }) mark(m.range, 0xFF25C975.toInt()) }
+            Regex("</?[A-Za-z][A-Za-z0-9-]*").findAll(text).forEach { m -> if (m.range.none { masked[it] }) mark(m.range, 0xFF7B4DFF.toInt(), bold = true) }
+            Regex("\\b[A-Za-z-]+(?==)").findAll(text).forEach { m -> if (m.range.none { masked[it] }) mark(m.range, 0xFF14C8FF.toInt()) }
+            return
         }
         commentRegexes(language).forEach { rx -> rx.findAll(text).forEach { m -> if (m.range.none { masked[it] }) mark(m.range, 0xFF6B7A99.toInt()) } }
         stringRegex(language).findAll(text).forEach { m -> if (m.range.none { masked[it] }) mark(m.range, 0xFF25C975.toInt()) }

@@ -43,7 +43,17 @@ class ProjectRepository(context: Context) {
   val folder = root(p); check(folder.mkdir())
   try {
    File(folder,"src").mkdir(); File(folder,"assets").mkdir()
-   File(folder,p.mainFile).writeText(Templates.code(language,template)); config(p); dao.insert(p); p
+   File(folder,p.mainFile).writeText(Templates.code(language,template))
+   // HTML is the only language whose template is more than one file — style.css/script.js are
+   // created alongside index.html so the <link>/<script> tags already in that file resolve the
+   // moment the project opens, giving a real multi-file web project immediately (see
+   // Templates.webCompanionFiles).
+   if (language == "HTML") {
+    val (css, js) = Templates.webCompanionFiles(template)
+    File(folder,"src/style.css").writeText(css)
+    File(folder,"src/script.js").writeText(js)
+   }
+   config(p); dao.insert(p); p
   } catch(e: Exception) { folder.deleteRecursively(); throw e }
  }
  suspend fun rename(id: String, name: String) = work { val p=get(id); save(p.copy(name=SafeFiles.name(name),modified=System.currentTimeMillis())) }
